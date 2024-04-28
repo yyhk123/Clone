@@ -71,32 +71,32 @@ const EnterCodeScreen = () => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.container}>
-                <View style={styles.titleContainer}>
-                    <TextInput
-                    style={styles.input}
-                    value={code}
-                    onChangeText={(newCode) => setCode(newCode)}
-                    placeholder="Enter code"
-                    placeholderTextColor="#888"
-                    autoCapitalize="none"
-                    onSubmitEditing={handleSubmit}
-                    editable={!isLoading}
-                    selectTextOnFocus={!isLoading} 
-                    />
-                    {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
-                </View>
-            </View>
+          <View style={styles.container}>
+              <View style={styles.titleContainer}>
+                  <TextInput
+                  style={styles.input}
+                  value={code}
+                  onChangeText={(newCode) => setCode(newCode)}
+                  placeholder="Enter code"
+                  placeholderTextColor="#888"
+                  autoCapitalize="none"
+                  onSubmitEditing={handleSubmit}
+                  editable={!isLoading}
+                  selectTextOnFocus={!isLoading} 
+                  />
+                  {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
+              </View>
+          </View>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 20,
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
     },
     titleContainer: {
         marginBottom: 20,

@@ -116,7 +116,7 @@ const PeopleList = () => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.container}>
+          <View style={styles.container}>
             {isLoading ? (
                 <View>
                 <ActivityIndicator size="large" color={'#000000'} />
@@ -137,7 +137,7 @@ const PeopleList = () => {
                 )}
             </View>
             )}
-            </View>
+          </View>
         </SafeAreaView>
     );
 };

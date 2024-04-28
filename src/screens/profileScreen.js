@@ -18,12 +18,6 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
-    titleContainer: {
-      marginBottom: 20,
-    },
-    buttonContainer: {
-      marginTop: 20,
-    },
   });
 
 export default ProfileScreen;
