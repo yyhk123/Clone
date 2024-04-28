@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {rMS, rV, rS} from '../styles/responsive'
 import app from '../../auth/db/firestore';
 
-// chat 지우면 AsyncStorage.getItem('chatList'); 에서도 지우기
 const ChatListScreen = () => {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,50 +65,63 @@ const ChatListScreen = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="px-4">
-        <View style={styles.titleContainer}>
-          <Text  style={styles.title}>
-            chat
-          </Text>
+    <SafeAreaView className=" justify-center items-center relative bg-white"
+        style={{marginTop: rMS(4),}}
+    >
+        <View style={styles.container}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>
+              chat
+            </Text>
+          </View>
         </View>
         {chats.length === 0 ? (
           <View style={styles.noChatContainer}>
             <Text>No Matches</Text>
           </View>
         ) : (
-          <View>
+          <View className="w-full h-full">
             <FlatList
               data={chats}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                className="w-9/10 py-3 items-center flex-row border-b  border-neutral-300"
-                  activeOpacity={0.8}
-                  onPress={() => navigation.navigate('ChatDetailScreen', {
-                    chatId: item.id,
-                    matchedName: item.participantsName.find(name => name !== savedUserName)
-                  })}
-                  >
+                <View style={{
+                    paddingTop: rMS(5),
+                    paddingBottom: rMS(5),
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#CBD5E0',
+                    marginHorizontal: rMS(15)
+                  }}>
+                  <TouchableOpacity
+                    style={styles.userContainer}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('ChatDetailScreen', {
+                      chatId: item.id,
+                      matchedName: item.participantsName.find(name => name !== savedUserName)
+                    })}
+                    >
 
-                  <View style={styles.imageViewContainer}> 
-                    <Image
-                      source={require('../face.jpg')}
-                      style={styles.image}
-                    />
-                  </View>
+                    <View style={styles.imageViewContainer}> 
+                      <Image
+                        source={require('../face.jpg')}
+                        style={styles.image}
+                      />
+                    </View>
 
-                  <View style={styles.userListContainer}>
-                      <Text style={styles.participants}>
-                        {item.participantsName.find(name => name !== savedUserName) || ''}
-                      </Text>
-                      <Text style={styles.lastMessage}>
-                        {item.lastMessage
-                          ? item.lastMessage.length > 45
-                              ? item.lastMessage.slice(0, 45) + "..."
-                              : item.lastMessage
-                          : 'Start Chat!'}
-                      </Text>
-                  </View>
-                </TouchableOpacity>
+                    <View style={styles.userInfoContainer}>
+                        <Text style={styles.participants}>
+                          {item.participantsName.find(name => name !== savedUserName) || ''}
+                        </Text>
+                        <Text style={styles.lastMessage}>
+                          {item.lastMessage
+                            ? item.lastMessage.length > 45
+                                ? item.lastMessage.slice(0, 45) + "..."
+                                : item.lastMessage
+                            : 'Start Chat!'}
+                        </Text>
+                    </View>
+                    <View style={{borderBottomWidth: 1, borderBottomColor: '#CBD5E0',}}></View>
+                  </TouchableOpacity>
+                </View>
               )}
             />
           </View>
@@ -119,10 +131,11 @@ const ChatListScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    marginTop: rMS(4),
+  },
   titleContainer: {
-    marginTop: '4%',
-    marginBottom: '3%',
-    marginLeft: '1%',
+    paddingLeft: rMS(20),
   },
   title: {
     textTransform: 'uppercase',
@@ -158,8 +171,13 @@ const styles = StyleSheet.create({
     height: rMS(70),
     borderRadius: rMS(100) / 2,
   },
-  userListContainer: {
+  userInfoContainer: {
     marginLeft: '0.5%'
+  },
+  userContainer: {
+    width: '100%',
+    alignItems: 'center',
+    flexDirection: 'row',
   }
 });
 

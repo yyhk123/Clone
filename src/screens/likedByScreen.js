@@ -60,20 +60,20 @@ const LikedByScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.container}>
-        {isLoading ? (
-            <View>
-                <ActivityIndicator size="large" color={'#000000'} />
-                <Text>Loading...</Text>
-            </View>
-        ) : (
-            <View>
-            {showUserCard && currentIndex < likedByLists.length && <UserCard user={likedByLists[currentIndex]} onNextUser={onNextUser} />}
-            {currentIndex === likedByLists.length && (
-                <Text>No more lists</Text>
-            )}
-        </View>
-        )}
-        <Button title="Refresh" onPress={handleRefresh} />
+          {isLoading ? (
+              <View>
+                  <ActivityIndicator size="large" color={'#000000'} />
+                  <Text>Loading...</Text>
+              </View>
+          ) : (
+              <View>
+              {showUserCard && currentIndex < likedByLists.length && <UserCard user={likedByLists[currentIndex]} onNextUser={onNextUser} />}
+              {currentIndex === likedByLists.length && (
+                  <Text>No more lists</Text>
+              )}
+          </View>
+          )}
+          <Button title="Refresh" onPress={handleRefresh} />
         </View>
     </SafeAreaView>
   );

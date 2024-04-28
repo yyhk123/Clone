@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {rMS, rV, rS} from '../styles/responsive'
 
 export default function WelcomeScreen() {
     const navigation = useNavigation();
@@ -46,9 +47,10 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
     container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
+        flex: 1,
+        marginTop: rMS(4),
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     titleContainer: {
       marginBottom: 20,

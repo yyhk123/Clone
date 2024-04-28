@@ -58,7 +58,7 @@ const LogIn = () => {
       const userName = userData.name;
 
       await AsyncStorage.setItem('name', userName);
-      await AsyncStorage.setItem('storeCode', null);
+      await AsyncStorage.removeItem('storeCode');
       console.log("Async stored email: ", value, " id: ", userDoc.id)
     } catch (error) {
       console.log(error);
@@ -99,33 +99,33 @@ const LogIn = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-        <View className={'mainContainer'} style={styles.container}>
-        <View className={'titleContainer'}>
-            <Text>
+      <View style={styles.container}>
+        <View style={styles.titleContainer}>
+          <Text>
             Please Log In
             {"\n"}
             Connect with Google
-            </Text>
+          </Text>
         </View>
         <Text>
-            {"\n"}
+          {"\n"}
         </Text>
-        <View className={'inputContainer'}>
-            <TextInput
+        <View>
+          <TextInput
             value={email}
             placeholder="Enter your email here"
             onChangeText={(val) => setEmail(val)}
             className={'inputBox'}
             />
-            <Text className="errorLabel">{emailError}</Text>
+          <Text className="errorLabel">{emailError}</Text>
         </View>
         <Text>
-            {"\n"}
+          {"\n"}
         </Text>
-        <View className={'inputContainer'}>
-            <Button title={'Log in'} onPress={handleLoginPress()} />
+        <View>
+          <Button title={'Log in'} onPress={handleLoginPress()} />
         </View>
-        </View>
+      </View>
     </SafeAreaView>
   )
 };
@@ -138,9 +138,6 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     marginBottom: 20,
-  },
-  buttonContainer: {
-    marginTop: 20,
   },
 });
 
