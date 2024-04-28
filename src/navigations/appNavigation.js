@@ -16,6 +16,9 @@ import EnterCode from '../screens/enterCodeScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// https://www.youtube.com/watch?v=x9XbqVbzET8&ab_channel=TechRated
+// https://github.com/joestackss/Dating-App-UI-React-Native/blob/main/src/screens/ChatDetailsScreen.js
+// npm run android (create android folder)
 
 const HomeTabs = () => {
     // useEffect(() => { //exit app on homeTabs
