@@ -1,21 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Image, BackHandler } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState, useFocusEffect } from '@react-navigation/native';
 import { getFirestore, getDoc, doc } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {rMS, rV, rS} from '../styles/responsive'
 import app from '../../auth/db/firestore';
 
+function useRouteName() {
+  const navigationState = useNavigationState(state => state);
+  return navigationState?.routes[navigationState?.index]?.name;
+}
+
 const ChatListScreen = () => {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const currentRouteName = useRouteName();
 
   const savedUserEmail = AsyncStorage.getItem("email");
   const savedUserName = AsyncStorage.getItem("name");
 
   const navigation = useNavigation();
   const db = getFirestore(app);
+
+  useFocusEffect(
+    React.useCallback(() => {
+        const onBackPress = () => {
+            if (currentRouteName === 'ChatListScreen') {
+                BackHandler.exitApp();
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+        return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [currentRouteName])
+  );
 
   const fetchChats = async () => {
     try {
@@ -133,6 +156,7 @@ const ChatListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     marginTop: rMS(4),
+    marginBottom: rMS(4),
   },
   titleContainer: {
     paddingLeft: rMS(20),

@@ -1,8 +1,9 @@
 import { View, Text, BackHandler } from 'react-native';
-import React, {useRef, useEffect} from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, {useRef, useEffect, useState} from 'react';
+import { NavigationContainer, useNavigationState, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { StatusBar } from 'expo-status-bar';
 import WelcomeScreen from '../screens/welcome';
 import ChatListScreen from '../screens/chatListScreen';
 import ChatDetailScreen from '../screens/chatDetailScreen';
@@ -10,8 +11,6 @@ import HomeNavigator from './homeNavigator';
 import LikedByScreen from '../screens/likedByScreen';
 import ProfileScreen from '../screens/profileScreen';
 import LoginScreen from '../screens/loginScreen';
-import ScanCode from '../screens/scanCodeScreen';
-import EnterCode from '../screens/enterCodeScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -19,21 +18,8 @@ const Tab = createBottomTabNavigator();
 // https://www.youtube.com/watch?v=x9XbqVbzET8&ab_channel=TechRated
 // https://github.com/joestackss/Dating-App-UI-React-Native/blob/main/src/screens/ChatDetailsScreen.js
 // npm run android (create android folder)
-
+  
 const HomeTabs = () => {
-    // useEffect(() => { //exit app on homeTabs
-    //     const backAction = () => {
-    //         BackHandler.exitApp();
-    //         return true;
-    //     };
-    //     const backHandler = BackHandler.addEventListener(
-    //         'hardwareBackPress',
-    //         backAction
-    //     );
-
-    //     return () => backHandler.remove();
-    // }, []);
-
     return (
         <Tab.Navigator
             initialRouteName='HomeNavigator'
@@ -87,6 +73,12 @@ const HomeTabs = () => {
 export default function AppNavigation() {
     return (
         <NavigationContainer>
+             <StatusBar
+                animated={true}
+                // backgroundColor="#2e2e2e"
+                style="auto"
+                hidden={false}
+            />
             <Stack.Navigator
                 initialRouteName='WelcomeScreen'
                 screenOptions={{ headerShown: false }}
@@ -98,8 +90,6 @@ export default function AppNavigation() {
                 />
                 <Stack.Screen name='HomeTabs' component={HomeTabs} options={{ headerShown: false }} />
                 <Stack.Screen name='LoginScreen' component={LoginScreen} options={{ headerShown: false }} />
-                <Stack.Screen name='ScanCodeScreen' component={EnterCode} options={{ headerShown: false }} />
-                <Stack.Screen name='EnterCodeScreen' component={ScanCode} options={{ headerShown: false }} />
             </Stack.Navigator>
         </NavigationContainer>
     );

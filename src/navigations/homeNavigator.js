@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { BackHandler } from 'react-native';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, useNavigationState, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -9,13 +9,35 @@ import EnterCodeScreen from '../screens/enterCodeScreen';
 import HomeScreen from '../screens/homeScreen';
 import PeopleList from '../screens/peopleListScreen';
 
+function useRouteName() {
+    const navigationState = useNavigationState(state => state);
+    return navigationState?.routes[navigationState?.index]?.name;
+  }
+
 const HomeNavigator = () => {
+    const currentRouteName = useRouteName();
     const Stack = createStackNavigator();
     const navigation = useNavigation();
     const navigationRef = useRef(null);
-    console.log("User at homenavigator")
 
     const userListed = AsyncStorage.getItem("usersListed");
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const onBackPress = () => {
+                if (currentRouteName === 'HomeNavigator') {
+                    BackHandler.exitApp();
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+            return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+        }, [currentRouteName])
+    );
 
     useEffect(() => {
         const focusListener = () => {
@@ -33,8 +55,8 @@ const HomeNavigator = () => {
             ) {
                 BackHandler.exitApp();
                 return true;
-            } else if (navigationRef.current && (navigationRef.current.getCurrentRoute().name === 'ScanCode' || 
-            navigationRef.current.getCurrentRoute().name === 'EnterCode')) {
+            } else if (navigationRef.current && (navigationRef.current.getCurrentRoute().name === 'EnterCodeScreen' || 
+                        navigationRef.current.getCurrentRoute().name === 'ScanCodeScreen')) {
                 navigationRef.current.navigate('HomeScreen')
                 return true;
             }

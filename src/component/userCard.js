@@ -17,7 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const UserCard = ({ user, onNextUser }) => {
     const [userList, setUserList] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const db = getFirestore(app);
     const navigation = useNavigation();
 

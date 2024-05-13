@@ -1,19 +1,42 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, Button, StyleSheet, ActivityIndicator  } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, Button, StyleSheet, ActivityIndicator, BackHandler  } from 'react-native';
+import { useNavigation, useNavigationState, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import app from '../../auth/db/firestore';
 import { getFirestore, getDoc, doc } from '@firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import UserCard from '../component/userCard';
 
-
+function useRouteName() {
+  const navigationState = useNavigationState(state => state);
+  console.log("userRouteName: ", navigationState?.routes[navigationState?.index]?.name);
+  return navigationState?.routes[navigationState?.index]?.name;
+}
 
 const LikedByScreen = () => {
   const [likedByLists, setLikedByLists] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0); // State to track the index of the current user to display
   const [showUserCard, setShowUserCard] = useState(true);
+  const currentRouteName = useRouteName();
+  console.log("currentRouteName: ", currentRouteName)
+
+  useFocusEffect(
+    React.useCallback(() => {
+        const onBackPress = () => {
+            if (currentRouteName === 'LikedByScreen') {
+                BackHandler.exitApp();
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+        return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [currentRouteName])
+);
 
   const navigation = useNavigation();
   const db = getFirestore(app);
@@ -24,7 +47,7 @@ const LikedByScreen = () => {
     });
 
     return unsubscribe;
-  }, [navigation, currentIndex]);
+  }, [navigation, currentIndex, isLoading]);
 
   const getLikedLists = async () => {
     setCurrentIndex(0);
