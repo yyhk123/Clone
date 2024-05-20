@@ -3,13 +3,12 @@ import { View, Text, Button, StyleSheet, ActivityIndicator, BackHandler  } from 
 import { useNavigation, useNavigationState, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import app from '../../auth/db/firestore';
-import { getFirestore, getDoc, doc } from '@firebase/firestore';
+import { getFirestore, doc, onSnapshot  } from '@firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import UserCard from '../component/userCard';
 
 function useRouteName() {
   const navigationState = useNavigationState(state => state);
-  console.log("userRouteName: ", navigationState?.routes[navigationState?.index]?.name);
   return navigationState?.routes[navigationState?.index]?.name;
 }
 
@@ -19,7 +18,8 @@ const LikedByScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0); // State to track the index of the current user to display
   const [showUserCard, setShowUserCard] = useState(true);
   const currentRouteName = useRouteName();
-  console.log("currentRouteName: ", currentRouteName)
+  const navigation = useNavigation();
+  const db = getFirestore(app);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -38,46 +38,44 @@ const LikedByScreen = () => {
     }, [currentRouteName])
 );
 
-  const navigation = useNavigation();
-  const db = getFirestore(app);
+  
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      getLikedLists();
-    });
+    const getLikedLists = async () => {
+      try {
+        const savedUserId = await AsyncStorage.getItem("id");
+        if (!savedUserId) {
+          throw new Error("No user ID found in AsyncStorage");
+        }
 
-    return unsubscribe;
-  }, [navigation, currentIndex, isLoading]);
+        const docRef = doc(db, 'users', savedUserId);
 
-  const getLikedLists = async () => {
-    setCurrentIndex(0);
-    console.log("get liked lists");
-    setIsLoading(false);
-    try {
-      const savedUserId = await AsyncStorage.getItem("id");
-      const docRef = doc(db, 'users', savedUserId);
-      const docSnap = await getDoc(docRef);
-      const likedBy = docSnap.data()['likedby'];
-      console.log("likedBy: ", likedBy)
-      setLikedByLists(likedBy);
-      setIsLoading(false);
-      return likedBy;
-    } catch (error) {
-      console.error('Error fetching likedBy list:', error);
-      setIsLoading(false);
-    }
-  };
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const likedBy = docSnap.data().likedby || [];
+            setLikedByLists(likedBy);
+            setIsLoading(false);
+            setCurrentIndex(0); // Reset index when data updates
+          } else {
+            console.log("No such document!");
+            setLikedByLists([]);
+            setIsLoading(false);
+          }
+        });
+
+        // Cleanup function to unsubscribe from the snapshot listener when the component unmounts
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error fetching likedBy list:', error);
+        setIsLoading(false);
+      }
+    };
+
+    getLikedLists();
+  }, [db]);
 
   const onNextUser = () => {
-    if (currentIndex < likedByLists.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-    } else {
-        setCurrentIndex(likedByLists.length);
-    }
-  };
-
-  const handleRefresh = () => {
-    getLikedLists(); // Call the function to fetch liked by list again
+    setCurrentIndex(0);
   };
 
   return (
@@ -96,7 +94,6 @@ const LikedByScreen = () => {
               )}
           </View>
           )}
-          <Button title="Refresh" onPress={handleRefresh} />
         </View>
     </SafeAreaView>
   );
