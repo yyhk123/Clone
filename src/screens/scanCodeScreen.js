@@ -12,10 +12,10 @@ import app from '../../auth/db/firestore';
 import { getFirestore, collection, query, getDocs, where } from '@firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 function useRouteName() {
   const navigationState = useNavigationState(state => state);
-  console.log("userRouteName: ", navigationState?.routes[navigationState?.index]?.name);
   return navigationState?.routes[navigationState?.index]?.name;
 }
 
@@ -82,6 +82,13 @@ const ScanCodeScreen = () => {
         navigation.navigate('PeopleList');
       } else {
         setErrorMessage('Please scan the code again.');
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid QR code.',
+          text2: 'Please scan the code again.',
+          position: 'bottom',
+          visibilityTime: 4000,
+        });
         console.log("Please scan again");
         setScanned(false);
         setScannedCode("");
@@ -117,6 +124,7 @@ const ScanCodeScreen = () => {
           style={[styles.camera, { height: height, width: width }]}
         />
       </View>
+      <Toast/>
     </SafeAreaView>
   );
 };
