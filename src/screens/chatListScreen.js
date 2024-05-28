@@ -39,6 +39,8 @@ const ChatListScreen = () => {
   );
 
   useEffect(() => {
+    let unsubscribe;
+  
     const fetchChats = async () => {
       try {
         setIsLoading(true);
@@ -46,7 +48,7 @@ const ChatListScreen = () => {
         const userDocRef = doc(db, 'users', savedUserId);
         
         // Set up snapshot listener
-        const unsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
+        unsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
           if (userDocSnap.exists()) {
             const userChats = userDocSnap.data().chatId || []; // Handle case where chatId is undefined or null
             const chatsData = [];
@@ -60,7 +62,7 @@ const ChatListScreen = () => {
                   chatsData.push({
                     id: chatId,
                     participants: chatData.participants,
-                    lastMessage: lastMessage,
+                    lastMessage: lastMessage.text,
                     participantsName: chatData.participantsName,
                   });
                 }
@@ -72,16 +74,14 @@ const ChatListScreen = () => {
           }
           setIsLoading(false);
         });
-
-        return unsubscribe; // Cleanup subscription on unmount
       } catch (error) {
         console.error('Error fetching chats:', error);
         setIsLoading(false);
       }
     };
-
-    const unsubscribe = fetchChats();
-
+  
+    fetchChats();
+  
     return () => unsubscribe && unsubscribe(); // Cleanup the listener on unmount
   }, [db]);
 
