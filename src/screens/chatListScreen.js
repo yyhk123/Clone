@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Image, BackHandler } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useNavigationState, useFocusEffect } from '@react-navigation/native';
-import { getFirestore, doc, onSnapshot, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {rMS, rV, rS} from '../styles/responsive';
+import { rMS } from '../styles/responsive';
 import app from '../../auth/db/firestore';
 
 function useRouteName() {
@@ -15,62 +15,84 @@ function useRouteName() {
 const ChatListScreen = () => {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [savedUserName, setSavedUserName] = useState('');
+  const [chatUnsubscribes, setChatUnsubscribes] = useState([]);
   const currentRouteName = useRouteName();
-  const savedUserName = AsyncStorage.getItem("name");
-
   const navigation = useNavigation();
   const db = getFirestore(app);
 
   useFocusEffect(
-    React.useCallback(() => {
-        const onBackPress = () => {
-            if (currentRouteName === 'ChatListScreen') {
-                BackHandler.exitApp();
-                return true;
-            } else {
-                return false;
-            }
-        };
+    useCallback(() => {
+      const onBackPress = () => {
+        if (currentRouteName === 'ChatListScreen') {
+          BackHandler.exitApp();
+          return true;
+        } else {
+          return false;
+        }
+      };
 
-        BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
-        return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [currentRouteName])
   );
 
   useEffect(() => {
-    let unsubscribe;
-  
+    const fetchUserName = async () => {
+      const userName = await AsyncStorage.getItem("name");
+      setSavedUserName(userName);
+    };
+
+    fetchUserName();
+  }, []);
+
+  useEffect(() => {
+    let userUnsubscribe;
+    
     const fetchChats = async () => {
       try {
         setIsLoading(true);
         const savedUserId = await AsyncStorage.getItem("id");
         const userDocRef = doc(db, 'users', savedUserId);
-        
-        // Set up snapshot listener
-        unsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
+
+        userUnsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
           if (userDocSnap.exists()) {
-            const userChats = userDocSnap.data().chatId || []; // Handle case where chatId is undefined or null
+            const userChats = userDocSnap.data().chatId || [];
+
+            // Clear previous chat unsubscribes
+            chatUnsubscribes.forEach(unsub => unsub());
+            setChatUnsubscribes([]);
+
             const chatsData = [];
-            for (const chatId of userChats) {
+            const newChatUnsubscribes = userChats.map(chatId => {
               const chatDocRef = doc(db, 'chats', chatId);
-              const chatDocSnap = await getDoc(chatDocRef);
-              if (chatDocSnap.exists()) {
-                const chatData = chatDocSnap.data();
-                if (chatData) {
+              return onSnapshot(chatDocRef, (chatDocSnap) => {
+                if (chatDocSnap.exists()) {
+                  const chatData = chatDocSnap.data();
                   const lastMessage = chatData.messages.length > 0 ? chatData.messages[chatData.messages.length - 1] : null;
-                  chatsData.push({
+                  const chatItem = {
                     id: chatId,
                     participants: chatData.participants,
-                    lastMessage: lastMessage.text,
+                    lastMessage: lastMessage ? lastMessage.text : 'Start Chat!',
                     participantsName: chatData.participantsName,
+                  };
+
+                  setChats(prevChats => {
+                    const index = prevChats.findIndex(chat => chat.id === chatId);
+                    if (index === -1) {
+                      return [...prevChats, chatItem];
+                    } else {
+                      const updatedChats = [...prevChats];
+                      updatedChats[index] = chatItem;
+                      return updatedChats;
+                    }
                   });
                 }
-              } else {
-                console.log('Chat document does not exist for chatId:', chatId);
-              }
-            }
-            setChats(chatsData);
+              });
+            });
+
+            setChatUnsubscribes(newChatUnsubscribes);
           }
           setIsLoading(false);
         });
@@ -79,10 +101,13 @@ const ChatListScreen = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchChats();
-  
-    return () => unsubscribe && unsubscribe(); // Cleanup the listener on unmount
+
+    return () => {
+      if (userUnsubscribe) userUnsubscribe();
+      chatUnsubscribes.forEach(unsub => unsub());
+    };
   }, [db]);
 
   if (isLoading) {
@@ -94,67 +119,54 @@ const ChatListScreen = () => {
   }
 
   return (
-    <SafeAreaView className=" justify-center items-center relative bg-white"
-        style={{marginTop: rMS(4),}}
-    >
-        <View style={styles.container}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>
-              chat
-            </Text>
-          </View>
+    <SafeAreaView className="justify-center items-center relative bg-white" style={{ marginTop: rMS(4) }}>
+      <View style={styles.container}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Chat</Text>
         </View>
-        {chats.length === 0 ? (
-          <View style={styles.noChatContainer}>
-            <Text>No Matches</Text>
-          </View>
-        ) : (
-          <View className="w-full h-full">
-            <FlatList
-              data={chats}
-              renderItem={({ item }) => (
-                <View style={{
-                    paddingTop: rMS(5),
-                    paddingBottom: rMS(5),
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#CBD5E0',
-                    marginHorizontal: rMS(15)
-                  }}>
-                  <TouchableOpacity
-                    style={styles.userContainer}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('ChatDetailScreen', {
-                      chatId: item.id,
-                      matchedName: item.participantsName.find(name => name !== savedUserName)
-                    })}
-                    >
+      </View>
+      {chats.length === 0 ? (
+        <View style={styles.noChatContainer}>
+          <Text>No Matches</Text>
+        </View>
+      ) : (
+        <View className="w-full h-full">
+          <FlatList
+            data={chats}
+            renderItem={({ item }) => (
+              <View style={{
+                paddingTop: rMS(5),
+                paddingBottom: rMS(5),
+                borderBottomWidth: 1,
+                borderBottomColor: '#CBD5E0',
+                marginHorizontal: rMS(15)
+              }}>
+                <TouchableOpacity
+                  style={styles.userContainer}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('ChatDetailScreen', {
+                    chatId: item.id,
+                    matchedName: item.participantsName.find(name => name !== savedUserName)
+                  })}>
+                  <View style={styles.imageViewContainer}>
+                    <Image source={require('../face.jpg')} style={styles.image} />
+                  </View>
 
-                    <View style={styles.imageViewContainer}> 
-                      <Image
-                        source={require('../face.jpg')}
-                        style={styles.image}
-                      />
-                    </View>
-
-                    <View style={styles.userInfoContainer}>
-                        <Text style={styles.participants}>
-                          {item.participantsName.find(name => name !== savedUserName) || ''}
-                        </Text>
-                        <Text style={styles.lastMessage}>
-                          {item.lastMessage
-                            ? item.lastMessage.length > 45
-                                ? item.lastMessage.slice(0, 45) + "..."
-                                : item.lastMessage
-                            : 'Start Chat!'}
-                        </Text>
-                    </View>
-                    <View style={{borderBottomWidth: 1, borderBottomColor: '#CBD5E0',}}></View>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          </View>
-        )}
+                  <View style={styles.userInfoContainer}>
+                    <Text style={styles.participants}>
+                      {item.participantsName.find(name => name !== savedUserName) || ''}
+                    </Text>
+                    <Text style={styles.lastMessage}>
+                      {item.lastMessage.length > 45 ? item.lastMessage.slice(0, 45) + "..." : item.lastMessage}
+                    </Text>
+                  </View>
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: '#CBD5E0' }}></View>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
