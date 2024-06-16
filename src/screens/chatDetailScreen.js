@@ -1,37 +1,47 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   Image,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { ChevronLeftIcon, PaperAirplaneIcon } from "react-native-heroicons/outline";
 import { EllipsisHorizontalIcon } from "react-native-heroicons/solid";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFirestore, getDoc, doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import app from '../../auth/db/firestore';
 import { rMS } from '../styles/responsive';
+import MessageList from '../component/messageList';
 
 const ChatDetailScreen = ({ route }) => {
   const navigation = useNavigation();
   const { chatId, matchedName } = route.params;
-  
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  
-  
-  const db = getFirestore(app);
-  const savedUserName = AsyncStorage.getItem("name");
+  const [userEmail, setUserEmail] = useState('');
 
-  const flatListRef = useRef(null);
+  const db = getFirestore(app);
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const savedUserEmail = await AsyncStorage.getItem("email");
+      setUserEmail(savedUserEmail);
+    };
+
+    fetchUserEmail();
+  }, []);
 
   useEffect(() => {
     const chatDocRef = doc(db, 'chats', chatId);
@@ -39,6 +49,7 @@ const ChatDetailScreen = ({ route }) => {
       if (docSnap.exists()) {
         setMessages(docSnap.data().messages || []);
         setIsLoading(false);
+        scrollToBottom();
       }
     });
 
@@ -48,11 +59,10 @@ const ChatDetailScreen = ({ route }) => {
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
 
-    const savedUserEmail = await AsyncStorage.getItem("email");
     const message = {
       text: newMessage,
       createdAt: new Date().toISOString(),
-      sender: savedUserEmail,
+      sender: userEmail,
     };
 
     const chatDocRef = doc(db, 'chats', chatId);
@@ -61,9 +71,33 @@ const ChatDetailScreen = ({ route }) => {
     });
 
     setNewMessage('');
-
-    flatListRef.current.scrollToEnd();
+    scrollToBottom();
   };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      scrollViewRef.current.scrollToEnd({ animated: false });
+    }, 50);
+  };
+
+  const scrollToBottomAnimated = () => {
+    setTimeout(() => {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }, 50);
+  };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        scrollToBottomAnimated(); // Scroll to bottom when keyboard shows
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -75,72 +109,65 @@ const ChatDetailScreen = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.backNavigator}
-          onPress={() => navigation.navigate("ChatListScreen")}
-        >
-          <ChevronLeftIcon size={35} color={"black"} strokeWidth={2} />
-        </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={{ flex: 1, paddingBottom: rMS(3)}}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
+        <View style={styles.headerContainer}>
+          {/* Back button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.backNavigator}
+            onPress={() => navigation.navigate("ChatListScreen")}
+          >
+            <ChevronLeftIcon size={35} color={"black"} strokeWidth={2} />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.imageContainer}
-          onPress={() => navigation.navigate("ChatListScreen")}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' }}>
-            <View style={{ marginRight: rMS(10) }}>
+          {/* User detail */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.imageContainer}
+            onPress={() => navigation.navigate("ChatListScreen")}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Image source={require('../face.jpg')} style={styles.image} />
-            </View>
-            <View style={{ justifyContent: 'center', alignItems: 'flex-start' }}>
               <Text style={styles.displayName}>{matchedName}</Text>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <View style={{ flex: 1 }} />
+          <View style={{ flex: 1 }} />
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.optionContainer}
-          onPress={() => navigation.navigate("ChatListScreen")}
-        >
-          <EllipsisHorizontalIcon
-            size={rMS(30)}
-            color={"black"}
-            strokeWidth={2}
+          {/* Options button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.optionContainer}
+            onPress={() => navigation.navigate("ChatListScreen")}
+          >
+            <EllipsisHorizontalIcon
+              size={rMS(30)}
+              color={"black"}
+              strokeWidth={2}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Messages */}
+        <MessageList scrollViewRef={scrollViewRef}  messages={messages} currentUser={userEmail}/>
+
+        {/* Message input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message"
+            value={newMessage}
+            onChangeText={setNewMessage}
+            multiline={true}
           />
-        </TouchableOpacity>
-      </View>
-
-      {/* Chat messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={({ item }) => (
-          <View style={styles.messageContainer}>
-            <Text style={styles.messageSender}>{item.sender}</Text>
-            <Text style={styles.messageText}>{item.text}</Text>
-            <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
-          </View>
-        )}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.messagesList}
-      />
-
-      {/* Message input */}
-      <KeyboardAvoidingView behavior="padding" style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message"
-          value={newMessage}
-          onChangeText={setNewMessage}
-          multiline={true}
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <PaperAirplaneIcon size={20} color={"white"} />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <PaperAirplaneIcon size={20} color={"white"} />
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -154,10 +181,8 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: rMS(10),
-    paddingRight: rMS(10),
-    paddingTop: rMS(5),
-    paddingBottom: rMS(5),
+    paddingHorizontal: rMS(10),
+    paddingVertical: rMS(5),
   },
   backNavigator: {
     marginRight: rMS(10),
@@ -171,6 +196,7 @@ const styles = StyleSheet.create({
     width: rMS(40),
     height: rMS(40),
     borderRadius: rMS(20),
+    marginRight: rMS(10),
   },
   displayName: {
     fontSize: rMS(15),
@@ -179,7 +205,7 @@ const styles = StyleSheet.create({
   optionContainer: {
     marginLeft: rMS(10),
   },
-  messagesList: {
+  messagesContainer: {
     padding: rMS(10),
   },
   messageContainer: {
@@ -214,11 +240,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: rMS(10),
     borderRadius: rMS(20),
-    marginLeft: rMS(3)
+    marginLeft: rMS(3),
+    
   },
   sendButton: {
-    marginLeft: rMS(3),
-    marginRight: rMS(3),
     backgroundColor: '#007bff',
     borderRadius: rMS(20),
     padding: rMS(10),
