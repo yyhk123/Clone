@@ -76,17 +76,12 @@ const ChatListScreen = () => {
                     participants: chatData.participants,
                     lastMessage: lastMessage ? lastMessage.text : 'Start Chat!',
                     participantsName: chatData.participantsName,
+                    updatedAt: chatData.updatedAt,
                   };
 
                   setChats(prevChats => {
-                    const index = prevChats.findIndex(chat => chat.id === chatId);
-                    if (index === -1) {
-                      return [...prevChats, chatItem];
-                    } else {
-                      const updatedChats = [...prevChats];
-                      updatedChats[index] = chatItem;
-                      return updatedChats;
-                    }
+                    const updatedChats = prevChats.filter(chat => chat.id !== chatId);
+                    return [chatItem, ...updatedChats].sort((a, b) => b.updatedAt - a.updatedAt);
                   });
                 }
               });
@@ -192,7 +187,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   noChatContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
