@@ -68,6 +68,7 @@ const ChatDetailScreen = ({ route }) => {
     const chatDocRef = doc(db, 'chats', chatId);
     await updateDoc(chatDocRef, {
       messages: arrayUnion(message),
+      updatedAt: new Date().toISOString(),
     });
 
     setNewMessage('');

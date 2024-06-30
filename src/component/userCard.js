@@ -47,8 +47,9 @@ const UserCard = ({ user, onNextUser = () => {} }) => {
         const chatsRef = collection(db, 'chats');
         const newChatRef = await addDoc(chatsRef, {
           participants: [savedUserEmail, userEmail],
-          messages: [""],
-          participantsName: [userName, savedUserName]
+          messages: [],
+          participantsName: [userName, savedUserName],
+          updatedAt: new Date().toISOString(), // order to list in chat list. if no chat history, use createdAt and if chat history, use last chat date
         });
         const chatId = newChatRef.id;
         await updateDoc(likedUserRef, {
